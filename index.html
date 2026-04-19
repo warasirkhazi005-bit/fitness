@@ -1,1285 +1,970 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FORGE GYM — FitX Arena</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --bg: #080808;
-    --bg2: #0f0f0f;
-    --bg3: #161616;
-    --bg4: #1e1e1e;
-    --acc: #e8301f;
-    --acc2: #ff6b35;
-    --acc3: #ffd700;
-    --text: #f0ede8;
-    --text2: #a8a49e;
-    --text3: #5a5753;
-    --border: rgba(240,237,232,0.07);
-    --border2: rgba(240,237,232,0.12);
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'Space Mono', monospace;
-    --radius: 4px;
-    --radius-lg: 8px;
-  }
-
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font-body);
-    overflow-x: hidden;
-    cursor: none;
-  }
-
-  /* CUSTOM CURSOR */
-  .cursor {
-    position: fixed; width: 10px; height: 10px;
-    background: var(--acc); border-radius: 50%;
-    pointer-events: none; z-index: 99999;
-    transform: translate(-50%,-50%);
-    transition: FitX Arena0.1s, width 0.2s, height 0.2s, background 0.2s;
-    mix-blend-mode: normal;
-  }
-  .cursor-ring {
-    position: fixed; width: 36px; height: 36px;
-    border: 1px solid rgba(232,48,31,0.5); border-radius: 50%;
-    pointer-events: none; z-index: 99998;
-    transform: translate(-50%,-50%);
-    transition: FitX Arena0.15s ease, width 0.25s, height 0.25s, border-color 0.2s;
-  }
-  body:has(a:hover) .cursor, body:has(button:hover) .cursor { width: 16px; height: 16px; }
-  body:has(a:hover) .cursor-ring, body:has(button:hover) .cursor-ring { width: 50px; height: 50px; border-color: var(--acc); }
-
-  /* NOISE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 9998; pointer-events: none;
-    opacity: 0.025;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    background-size: 200px 200px;
-  }
-
-  /* STICKY NAV */
-  nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    height: 64px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 3rem;
-    background: rgba(8,8,8,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    transition: background 0.3s;
-  }
-  .nav-logo {
-    font-family: var(--font-display);
-    font-size: 28px; letter-spacing: 3px;
-    color: var(--text);
-    text-decoration: none;
-  }
-  .nav-logo span { color: var(--acc); }
-  .nav-links { display: flex; gap: 2px; align-items: center; }
-  .nav-link {
-    font-family: var(--font-mono);
-    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--text3); text-decoration: none;
-    padding: 8px 14px; border-radius: var(--radius);
-    transition: color 0.2s, background 0.2s;
-    cursor: none;
-  }
-  .nav-link:hover, .nav-link.active { color: var(--text); background: var(--bg3); }
-  .nav-cta {
-    margin-left: 1rem;
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-    background: var(--acc); color: white; border: none;
-    padding: 9px 20px; border-radius: var(--radius); cursor: none;
-    transition: background 0.2s, FitX Arena0.15s;
-  }
-  .nav-cta:hover { background: #c4271a; transform: scale(1.03); }
-  .hamburger { display: none; background: none; border: none; color: var(--text); font-size: 22px; cursor: none; }
-  @media (max-width: 768px) {
-    .nav-links { display: none; }
-    .hamburger { display: block; }
-    nav { padding: 0 1.5rem; }
-    .nav-logo { font-size: 22px; }
-  }
-
-  /* PAGES */
-  .page { display: none; min-height: 100vh; padding-top: 64px; }
-  .page.active { display: block; }
-
-  /* ===================== HOME ===================== */
-  .hero {
-    position: relative; min-height: calc(100vh - 64px);
-    display: flex; align-items: center;
-    overflow: hidden;
-  }
-  .hero-video-bg {
-    position: absolute; inset: 0;
-    background:
-      linear-gradient(135deg, rgba(8,8,8,0.97) 0%, rgba(20,5,5,0.85) 50%, rgba(8,8,8,0.97) 100%);
-    z-index: 1;
-  }
-  .hero-grid-lines {
-    position: absolute; inset: 0; z-index: 0; opacity: 0.04;
-    background-image:
-      linear-gradient(var(--text) 1px, transparent 1px),
-      linear-gradient(90deg, var(--text) 1px, transparent 1px);
-    background-size: 80px 80px;
-  }
-  .hero-accent-lines {
-    position: absolute; right: 0; top: 0; bottom: 0; width: 50%; z-index: 0;
-    overflow: hidden;
-  }
-  .hero-accent-lines::before {
-    content: '';
-    position: absolute; top: -20%; right: -10%; width: 120%; height: 140%;
-    background: repeating-linear-gradient(
-      -30deg, transparent, transparent 40px,
-      rgba(232,48,31,0.04) 40px, rgba(232,48,31,0.04) 41px
-    );
-  }
-  .hero-big-text {
-    position: absolute; right: -0.05em; top: 50%; transform: translateY(-50%);
-    font-family: var(--font-display); font-size: clamp(120px, 18vw, 280px);
-    color: rgba(232,48,31,0.04); letter-spacing: -0.02em; line-height: 1;
-    white-space: nowrap; z-index: 0; pointer-events: none; user-select: none;
-  }
-  .hero-content {
-    position: relative; z-index: 2;
-    padding: 5rem 3rem 5rem;
-    max-width: 900px;
-  }
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 10px;
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px;
-    text-transform: uppercase; color: var(--acc);
-    margin-bottom: 2rem;
-    animation: fadeUp 0.8s ease both;
-  }
-  .eyebrow-line { width: 40px; height: 1px; background: var(--acc); }
-  .hero h1 {
-    font-family: var(--font-display);
-    font-size: clamp(64px, 10vw, 140px);
-    line-height: 0.95; letter-spacing: -1px;
-    margin-bottom: 1.5rem;
-    animation: fadeUp 0.8s 0.15s ease both;
-  }
-  .hero h1 .line2 { color: var(--acc); display: block; }
-  .hero-sub {
-    font-size: 16px; color: var(--text2); line-height: 1.7;
-    max-width: 480px; margin-bottom: 2.5rem;
-    animation: fadeUp 0.8s 0.3s ease both;
-  }
-  .hero-buttons {
-    display: flex; gap: 14px; flex-wrap: wrap;
-    animation: fadeUp 0.8s 0.45s ease both;
-  }
-  .btn-primary {
-    font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    background: var(--acc); color: white; border: none;
-    padding: 15px 32px; border-radius: var(--radius); cursor: none;
-    transition: background 0.2s, FitX Arena0.15s;
-  }
-  .btn-primary:hover { background: #c4271a; transform: translateY(-2px); }
-  .btn-ghost {
-    font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    background: transparent; color: var(--text); border: 1px solid var(--border2);
-    padding: 15px 32px; border-radius: var(--radius); cursor: none;
-    transition: border-color 0.2s, background 0.2s, FitX Arena0.15s;
-  }
-  .btn-ghost:hover { border-color: var(--text2); background: rgba(240,237,232,0.04); transform: translateY(-2px); }
-
-  .hero-scroll {
-    position: absolute; bottom: 2.5rem; left: 3rem; z-index: 2;
-    display: flex; align-items: center; gap: 12px;
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px;
-    color: var(--text3); text-transform: uppercase;
-    animation: fadeUp 0.8s 0.6s ease both;
-  }
-  .scroll-line { width: 40px; height: 1px; background: var(--text3); }
-
-  /* STATS BAR */
-  .stats-bar {
-    background: var(--bg2);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    display: flex; flex-wrap: wrap;
-  }
-  .stat-item {
-    flex: 1; min-width: 120px; padding: 1.75rem 2rem;
-    border-right: 1px solid var(--border);
-    text-align: center;
-  }
-  .stat-item:last-child { border-right: none; }
-  .stat-num {
-    font-family: var(--font-display);
-    font-size: 42px; letter-spacing: 1px;
-    color: var(--text); line-height: 1;
-  }
-  .stat-num span { color: var(--acc); }
-  .stat-label {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--text3); margin-top: 6px;
-  }
-
-  /* SECTION SHARED */
-  .section { padding: 6rem 3rem; max-width: 1200px; margin: 0 auto; }
-  .section-full { padding: 6rem 3rem; }
-  .section-eyebrow {
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 3px;
-    text-transform: uppercase; color: var(--acc);
-    margin-bottom: 1rem;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .section-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--acc); }
-  .section-title {
-    font-family: var(--font-display);
-    font-size: clamp(40px, 5vw, 72px);
-    letter-spacing: -0.5px; line-height: 1; margin-bottom: 1.5rem;
-  }
-  .section-sub { font-size: 15px; color: var(--text2); line-height: 1.7; max-width: 520px; }
-
-  /* PROGRAMS GRID */
-  .programs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1px; border: 1px solid var(--border); margin-top: 3rem;
-    background: var(--border);
-  }
-  .program-card {
-    background: var(--bg2); padding: 2rem;
-    transition: background 0.25s, FitX Arena0.25s;
-    position: relative; overflow: hidden;
-    cursor: none;
-  }
-  .program-card:hover { background: var(--bg3); }
-  .program-card::after {
-    content: '';
-    position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
-    background: var(--acc);
-    transition: width 0.4s ease;
-  }
-  .program-card:hover::after { width: 100%; }
-  .prog-num {
-    font-family: var(--font-display); font-size: 64px; color: var(--border2);
-    line-height: 1; margin-bottom: 1rem;
-    transition: color 0.25s;
-  }
-  .program-card:hover .prog-num { color: var(--acc); opacity: 0.3; }
-  .prog-icon-wrap { font-size: 28px; margin-bottom: 1rem; }
-  .prog-name {
-    font-family: var(--font-display); font-size: 28px; letter-spacing: 0.5px;
-    margin-bottom: 0.75rem;
-  }
-  .prog-desc { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 1.25rem; }
-  .prog-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
-  .tag {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 4px 10px; border-radius: 2px;
-    border: 1px solid var(--border2); color: var(--text3);
-  }
-  .tag.hot { border-color: rgba(232,48,31,0.4); color: var(--acc); background: rgba(232,48,31,0.06); }
-  .prog-link {
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--text3); text-decoration: none; display: flex; align-items: center; gap: 8px;
-    transition: color 0.2s;
-  }
-  .prog-link:hover { color: var(--acc); }
-  .prog-link::after { content: '→'; }
-
-  /* SCHEDULE */
-  .sched-wrap {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); overflow: auto; margin-top: 3rem;
-  }
-  .sched-table { width: 100%; border-collapse: collapse; min-width: 640px; }
-  .sched-table th {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text3); padding: 14px 16px; text-align: center;
-    border-bottom: 1px solid var(--border); background: var(--bg3);
-  }
-  .sched-table th:first-child { text-align: left; }
-  .sched-table td {
-    padding: 10px; border-bottom: 1px solid var(--border);
-    font-size: 12px; vertical-align: top;
-  }
-  .sched-time {
-    font-family: var(--font-mono); font-size: 11px; color: var(--text3);
-    padding: 10px 16px; white-space: nowrap;
-  }
-  .cls-pill {
-    border-radius: 3px; padding: 6px 10px; margin-bottom: 4px;
-    cursor: none; transition: FitX Arena0.15s, opacity 0.15s;
-  }
-  .cls-pill:hover { transform: scale(1.02); opacity: 0.85; }
-  .cls-pill-name { font-size: 11px; font-weight: 600; }
-  .cls-pill-trainer { font-size: 10px; opacity: 0.7; margin-top: 2px; font-family: var(--font-mono); }
-  .strength { background: rgba(232,48,31,0.12); border-left: 2px solid #e8301f; color: #ff7a6e; }
-  .cardio { background: rgba(255,107,53,0.12); border-left: 2px solid #ff6b35; color: #ff9a72; }
-  .hiit { background: rgba(255,215,0,0.1); border-left: 2px solid #ffd700; color: #ffd700; }
-  .yoga { background: rgba(80,200,130,0.1); border-left: 2px solid #50c882; color: #50c882; }
-  .boxing { background: rgba(150,100,255,0.1); border-left: 2px solid #9664ff; color: #9664ff; }
-  .sched-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 1.5rem; }
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); }
-  .legend-dot { width: 8px; height: 8px; border-radius: 1px; }
-
-  /* TRAINERS */
-  .trainers-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px; margin-top: 3rem;
-  }
-  .trainer-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); overflow: hidden;
-    transition: FitX Arena0.25s, border-color 0.25s; cursor: none;
-  }
-  .trainer-card:hover { transform: translateY(-4px); border-color: var(--border2); }
-  .trainer-avatar {
-    height: 160px; display: flex; align-items: center; justify-content: center;
-    font-size: 64px; position: relative;
-    background: var(--bg3);
-  }
-  .trainer-avatar-accent {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-    background: var(--acc);
-    transform: scaleX(0); transition: FitX Arena0.3s;
-  }
-  .trainer-card:hover .trainer-avatar-accent { transform: scaleX(1); }
-  .trainer-body { padding: 1.25rem; }
-  .trainer-name { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.5px; margin-bottom: 2px; }
-  .trainer-spec {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--acc); margin-bottom: 10px;
-  }
-  .trainer-bio { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
-  .trainer-socials { display: flex; gap: 6px; }
-  .social-chip {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-    padding: 5px 10px; border-radius: 2px;
-    border: 1px solid var(--border2); color: var(--text3);
-    background: none; cursor: none; transition: all 0.2s;
-  }
-  .social-chip:hover { border-color: var(--acc); color: var(--acc); background: rgba(232,48,31,0.05); }
-
-  /* MEMBERSHIP */
-  .plans-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px; margin-top: 3rem; align-items: start;
-  }
-  .plan-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 2rem;
-    position: relative; transition: FitX Arena0.25s, border-color 0.25s;
-  }
-  .plan-card:hover { transform: translateY(-4px); }
-  .plan-card.featured { border-color: var(--acc); background: rgba(232,48,31,0.03); }
-  .plan-popular {
-    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-    background: var(--acc); color: white;
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-    padding: 5px 16px; border-radius: 20px; white-space: nowrap;
-  }
-  .plan-name {
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text3); margin-bottom: 1.25rem;
-  }
-  .plan-price {
-    font-family: var(--font-display); font-size: 64px; letter-spacing: -2px;
-    line-height: 1; margin-bottom: 4px;
-  }
-  .plan-price sup { font-size: 28px; vertical-align: super; }
-  .plan-period { font-size: 12px; color: var(--text3); margin-bottom: 1.75rem; }
-  .plan-divider { height: 1px; background: var(--border); margin-bottom: 1.5rem; }
-  .plan-features { list-style: none; margin-bottom: 2rem; }
-  .plan-features li {
-    display: flex; align-items: flex-start; gap: 10px;
-    font-size: 13px; color: var(--text2); padding: 7px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .plan-features li:last-child { border-bottom: none; }
-  .check { color: var(--acc); font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-  .plan-features li.no { color: var(--text3); }
-  .plan-features li.no .check { color: var(--text3); }
-  .plan-btn {
-    width: 100%;
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-    padding: 13px; border-radius: var(--radius); cursor: none; transition: all 0.2s;
-  }
-  .plan-btn.primary { background: var(--acc); color: white; border: none; }
-  .plan-btn.primary:hover { background: #c4271a; transform: translateY(-1px); }
-  .plan-btn.outline { background: none; border: 1px solid var(--border2); color: var(--text2); }
-  .plan-btn.outline:hover { border-color: var(--acc); color: var(--acc); background: rgba(232,48,31,0.04); }
-
-  /* TRANSFORMATIONS */
-  .transforms-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px; margin-top: 3rem;
-  }
-  .transform-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); overflow: hidden;
-    transition: FitX Arena0.25s, border-color 0.25s; cursor: none;
-  }
-  .transform-card:hover { transform: translateY(-3px); border-color: var(--border2); }
-  .transform-visual { display: flex; height: 140px; position: relative; }
-  .t-side { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 44px; position: relative; }
-  .t-before { background: rgba(255,255,255,0.02); }
-  .t-after { background: rgba(232,48,31,0.05); }
-  .t-divider { width: 2px; background: var(--acc); opacity: 0.6; }
-  .t-label {
-    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .t-before .t-label { color: var(--text3); }
-  .t-after .t-label { color: var(--acc); }
-  .transform-body { padding: 1.25rem; }
-  .transform-name { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
-  .transform-result { font-size: 13px; color: var(--acc); margin-bottom: 3px; }
-  .transform-prog { font-family: var(--font-mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
-  .transform-quote { font-size: 12px; color: var(--text2); line-height: 1.6; font-style: italic; border-left: 2px solid var(--border2); padding-left: 10px; }
-
-  /* TESTIMONIALS */
-  .testimonials-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px; margin-top: 3rem;
-  }
-  .testimonial-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 1.75rem;
-    position: relative;
-  }
-  .quote-mark {
-    font-family: var(--font-display); font-size: 80px; line-height: 0.6;
-    color: var(--acc); opacity: 0.15; position: absolute; top: 1.5rem; right: 1.5rem;
-  }
-  .t-stars { color: var(--acc3); font-size: 13px; margin-bottom: 1rem; letter-spacing: 2px; }
-  .t-text { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 1.25rem; font-style: italic; }
-  .t-author { display: flex; align-items: center; gap: 12px; }
-  .t-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: rgba(232,48,31,0.12); color: var(--acc);
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-mono); font-size: 12px; font-weight: 700; flex-shrink: 0;
-  }
-  .t-author-name { font-size: 13px; font-weight: 600; }
-  .t-author-prog { font-family: var(--font-mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
-
-  /* CONTACT */
-  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; } }
-  .contact-form {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 2rem;
-  }
-  .form-title { font-family: var(--font-display); font-size: 32px; margin-bottom: 1.75rem; }
-  .form-group { margin-bottom: 1.25rem; }
-  .form-label {
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text3); display: block; margin-bottom: 8px;
-  }
-  .form-input, .form-select, .form-textarea {
-    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
-    color: var(--text); padding: 11px 14px; border-radius: var(--radius);
-    font-family: var(--font-body); font-size: 14px;
-    transition: border-color 0.2s; outline: none;
-  }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--acc); }
-  .form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
-  .form-textarea { resize: vertical; min-height: 90px; }
-  .form-submit {
-    width: 100%; margin-top: 0.5rem;
-    font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    background: var(--acc); color: white; border: none;
-    padding: 14px; border-radius: var(--radius); cursor: none;
-    transition: background 0.2s, FitX Arena0.15s;
-  }
-  .form-submit:hover { background: #c4271a; transform: translateY(-1px); }
-  .form-success {
-    display: none; margin-top: 1rem;
-    background: rgba(80,200,130,0.1); border: 1px solid rgba(80,200,130,0.3);
-    color: #50c882; padding: 12px 16px; border-radius: var(--radius);
-    font-size: 13px; text-align: center; font-family: var(--font-mono); letter-spacing: 0.5px;
-  }
-  .contact-sidebar { display: flex; flex-direction: column; gap: 16px; }
-  .info-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); padding: 1.5rem;
-  }
-  .info-card-title {
-    font-family: var(--font-display); font-size: 20px; margin-bottom: 1rem;
-  }
-  .info-row { display: flex; gap: 12px; margin-bottom: 10px; font-size: 13px; }
-  .info-icon { color: var(--acc); width: 16px; flex-shrink: 0; margin-top: 2px; }
-  .info-val { color: var(--text2); line-height: 1.6; }
-  .map-mock {
-    background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-    height: 120px; display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 6px; margin-top: 12px;
-  }
-  .map-mock-icon { font-size: 28px; opacity: 0.4; }
-  .map-mock-text { font-family: var(--font-mono); font-size: 10px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; }
-
-  /* CTA BAND */
-  .cta-band {
-    background: var(--acc); padding: 4rem 3rem;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem;
-  }
-  .cta-band h2 { font-family: var(--font-display); font-size: clamp(36px, 5vw, 64px); color: white; }
-  .cta-band p { font-size: 15px; color: rgba(255,255,255,0.75); margin-top: 0.5rem; }
-  .btn-white {
-    font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    background: white; color: var(--acc); border: none;
-    padding: 16px 36px; border-radius: var(--radius); cursor: none;
-    transition: FitX Arena0.15s, box-shadow 0.15s; white-space: nowrap;
-  }
-  .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
-
-  /* FOOTER */
-  footer {
-    background: var(--bg2); border-top: 1px solid var(--border);
-    padding: 2rem 3rem; text-align: center;
-  }
-  .footer-logo { font-family: var(--font-display); font-size: 24px; letter-spacing: 2px; margin-bottom: 8px; }
-  .footer-logo span { color: var(--acc); }
-  .footer-text { font-family: var(--font-mono); font-size: 11px; color: var(--text3); letter-spacing: 1px; }
-
-  /* DIVIDER */
-  .divider { height: 1px; background: var(--border); }
-
-  /* LIVE BADGE */
-  .live-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(232,48,31,0.1); border: 1px solid rgba(232,48,31,0.25);
-    color: var(--acc);
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-    padding: 4px 12px; border-radius: 20px;
-  }
-  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-
-  /* ANIMATIONS */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, FitX Arena0.6s ease; }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    .section { padding: 4rem 1.5rem; }
-    .section-full { padding: 4rem 1.5rem; }
-    .hero-content { padding: 3rem 1.5rem; }
-    .hero h1 { font-size: clamp(52px, 14vw, 90px); }
-    .stats-bar .stat-item { min-width: 100px; padding: 1.25rem 1rem; }
-    .stat-num { font-size: 32px; }
-    .cta-band { padding: 3rem 1.5rem; text-align: center; justify-content: center; }
-    footer { padding: 2rem 1.5rem; }
-    nav { padding: 0 1.25rem; }
-    .hero-scroll { left: 1.5rem; }
-  }
-  @media (max-width: 500px) {
-    .hero-buttons { flex-direction: column; }
-    .btn-primary, .btn-ghost { width: 100%; text-align: center; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APEX — Elite Performance Center</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- AOS Scroll Animations -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+  <!-- Google Fonts: Bebas Neue + DM Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursor-ring"></div>
-
-<!-- NAV -->
-<nav id="main-nav">
-  <a href="#" class="nav-logo" onclick="showPage('home'); return false;">FORGE<span>.</span></a>
-  <div class="nav-links" id="nav-links">
-    <a href="#" class="nav-link active" onclick="showPage('home'); return false;">Home</a>
-    <a href="#" class="nav-link" onclick="showPage('programs'); return false;">Programs</a>
-    <a href="#" class="nav-link" onclick="showPage('schedule'); return false;">Schedule</a>
-    <a href="#" class="nav-link" onclick="showPage('trainers'); return false;">Trainers</a>
-    <a href="#" class="nav-link" onclick="showPage('membership'); return false;">Membership</a>
-    <a href="#" class="nav-link" onclick="showPage('transforms'); return false;">Results</a>
-    <a href="#" class="nav-link" onclick="showPage('contact'); return false;">Contact</a>
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#home" class="nav-logo">
+      <span class="logo-apex">APEX</span><span class="logo-dot">.</span>
+    </a>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="#home" class="nav-link active">Home</a></li>
+      <li><a href="#programs" class="nav-link">Programs</a></li>
+      <li><a href="#schedule" class="nav-link">Schedule</a></li>
+      <li><a href="#trainers" class="nav-link">Trainers</a></li>
+      <li><a href="#membership" class="nav-link">Membership</a></li>
+      <li><a href="#transformations" class="nav-link">Results</a></li>
+      <li><a href="#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <a href="#contact" class="btn-nav">Start Free Trial</a>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
-  <button class="nav-cta" onclick="showPage('contact')">Join Now</button>
-  <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
 </nav>
 
-<!-- MOBILE NAV DRAWER -->
-<div id="mobile-menu" style="display:none; position:fixed; top:64px; left:0; right:0; z-index:999; background:rgba(10,10,10,0.98); backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:1rem;">
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('home');toggleMenu();return false;">Home</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('programs');toggleMenu();return false;">Programs</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('schedule');toggleMenu();return false;">Schedule</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('trainers');toggleMenu();return false;">Trainers</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('membership');toggleMenu();return false;">Membership</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('transforms');toggleMenu();return false;">Results</a>
-  <a href="#" class="nav-link" style="display:block;padding:12px 16px;" onclick="showPage('contact');toggleMenu();return false;">Contact</a>
-</div>
+<!-- ==================== PAGE 1: HOME ==================== -->
+<section class="page active-page" id="home">
 
-<!-- ====== HOME ====== -->
-<div id="page-home" class="page active">
-
-  <section class="hero">
-    <div class="hero-grid-lines"></div>
-    <div class="hero-accent-lines"></div>
-    <div class="hero-video-bg"></div>
-    <div class="hero-big-text">FORGE</div>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-video-wrap">
+      <!-- Fallback: Unsplash fitness image as poster -->
+      <video autoplay muted loop playsinline class="hero-video"
+        poster="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80">
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-overlay"></div>
+    </div>
     <div class="hero-content">
-      <div class="hero-eyebrow"><span class="eyebrow-line"></span> No excuses. Only results.</div>
-      <h1>Transform<br><span class="line2">Your Body.</span></h1>
-      <p class="hero-sub">Join 12,000+ members who've pushed beyond limits and rebuilt themselves from the ground up. Your strongest chapter starts now.</p>
-      <div class="hero-buttons">
-        <button class="btn-primary" onclick="showPage('contact')">Start Free Trial</button>
-        <button class="btn-ghost" onclick="showPage('programs')">Explore Programs</button>
+      <div class="hero-tag" data-aos="fade-down">Elite Performance Center</div>
+      <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+        FORGE YOUR<br /><span class="text-accent">LEGACY</span>
+      </h1>
+      <p class="hero-sub" data-aos="fade-up" data-aos-delay="200">
+        Where champions are built. No excuses. No limits. Just results.
+      </p>
+      <div class="hero-ctas" data-aos="fade-up" data-aos-delay="300">
+        <a href="#contact" class="btn-primary">Start Free Trial</a>
+        <a href="#programs" class="btn-ghost">Explore Programs</a>
       </div>
     </div>
-    <div class="hero-scroll"><span class="scroll-line"></span> Scroll to explore</div>
-  </section>
-
-  <div class="stats-bar">
-    <div class="stat-item reveal">
-      <div class="stat-num"><span id="c1">0</span>K+</div>
-      <div class="stat-label">Active Members</div>
-    </div>
-    <div class="stat-item reveal">
-      <div class="stat-num"><span id="c2">0</span>%</div>
-      <div class="stat-label">Success Rate</div>
-    </div>
-    <div class="stat-item reveal">
-      <div class="stat-num"><span id="c3">0</span></div>
-      <div class="stat-label">Expert Trainers</div>
-    </div>
-    <div class="stat-item reveal">
-      <div class="stat-num"><span id="c4">0</span></div>
-      <div class="stat-label">Programs</div>
-    </div>
-    <div class="stat-item reveal">
-      <div class="stat-num"><span id="c5">0</span></div>
-      <div class="stat-label">Locations</div>
+    <div class="hero-scroll-hint">
+      <span>SCROLL</span>
+      <div class="scroll-line"></div>
     </div>
   </div>
 
-  <div class="section reveal">
-    <div class="section-eyebrow">Programs</div>
-    <div class="section-title">Find Your<br>Perfect Workout</div>
+  <!-- STATS BAND -->
+  <div class="stats-band">
+    <div class="stat-item" data-aos="fade-up">
+      <span class="stat-num" data-target="2500">0</span><span class="stat-num">+</span>
+      <span class="stat-label">Members</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" data-aos="fade-up" data-aos-delay="100">
+      <span class="stat-num" data-target="15">0</span><span class="stat-num">+</span>
+      <span class="stat-label">Elite Trainers</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" data-aos="fade-up" data-aos-delay="200">
+      <span class="stat-num" data-target="98">0</span><span class="stat-num">%</span>
+      <span class="stat-label">Success Rate</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item" data-aos="fade-up" data-aos-delay="300">
+      <span class="stat-num" data-target="10">0</span><span class="stat-num">+</span>
+      <span class="stat-label">Years of Excellence</span>
+    </div>
+  </div>
+
+  <!-- FEATURED PROGRAMS PREVIEW -->
+  <div class="section programs-preview">
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">What We Offer</span>
+      <h2 class="section-title">ELITE <span class="text-accent">PROGRAMS</span></h2>
+      <p class="section-sub">Designed by world-class coaches for maximum results</p>
+    </div>
     <div class="programs-grid">
-      <div class="program-card reveal" onclick="showPage('programs')">
-        <div class="prog-num">01</div>
-        <div class="prog-name">Strength Training</div>
-        <div class="prog-desc">Progressive overload. Raw power. Sculptured muscle. Built for every level.</div>
-        <div class="prog-tags"><span class="tag">3×/week</span><span class="tag hot">Popular</span></div>
-        <a class="prog-link" href="#">Learn More</a>
-      </div>
-      <div class="program-card reveal" onclick="showPage('programs')">
-        <div class="prog-num">02</div>
-        <div class="prog-name">HIIT Burn</div>
-        <div class="prog-desc">Maximum calorie torch in minimum time. High-intensity, high-reward intervals.</div>
-        <div class="prog-tags"><span class="tag">45 min</span><span class="tag hot">Hot</span></div>
-        <a class="prog-link" href="#">Learn More</a>
-      </div>
-      <div class="program-card reveal" onclick="showPage('programs')">
-        <div class="prog-num">03</div>
-        <div class="prog-name">Boxing</div>
-        <div class="prog-desc">Technique meets conditioning. Learn to fight. Feel unstoppable.</div>
-        <div class="prog-tags"><span class="tag">60 min</span><span class="tag">3×/week</span></div>
-        <a class="prog-link" href="#">Learn More</a>
-      </div>
-    </div>
-  </div>
-
-  <div class="divider"></div>
-
-  <div class="section reveal">
-    <div class="section-eyebrow">Testimonials</div>
-    <div class="section-title">Real People.<br>Real Results.</div>
-    <div class="testimonials-grid">
-      <div class="testimonial-card reveal">
-        <div class="quote-mark">"</div>
-        <div class="t-stars">★★★★★</div>
-        <div class="t-text">"Lost 28 lbs in 4 months. The HIIT program completely changed how I see myself. The coaches push you in ways you never thought you needed."</div>
-        <div class="t-author">
-          <div class="t-avatar">JM</div>
-          <div><div class="t-author-name">James M.</div><div class="t-author-prog">HIIT · 4 months</div></div>
+      <div class="prog-card" data-aos="fade-up">
+        <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&q=80" alt="Strength" loading="lazy" />
+        <div class="prog-card-content">
+          <span class="prog-tag">POWER</span>
+          <h3>Strength Training</h3>
+          <p>Build raw power with our compound movement protocols</p>
+          <a href="#programs" class="prog-link">Explore <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
-      <div class="testimonial-card reveal">
-        <div class="quote-mark">"</div>
-        <div class="t-stars">★★★★★</div>
-        <div class="t-text">"From zero to bench pressing 220 lbs in 6 months. Forge's strength program and trainer Marcus literally rebuilt my body and confidence."</div>
-        <div class="t-author">
-          <div class="t-avatar">SR</div>
-          <div><div class="t-author-name">Sara R.</div><div class="t-author-prog">Strength · 6 months</div></div>
+      <div class="prog-card featured-prog" data-aos="fade-up" data-aos-delay="100">
+        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80" alt="HIIT" loading="lazy" />
+        <div class="prog-card-content">
+          <span class="prog-tag accent-tag">POPULAR</span>
+          <h3>HIIT Training</h3>
+          <p>Maximize fat burn with high-intensity interval sessions</p>
+          <a href="#programs" class="prog-link">Explore <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
-      <div class="testimonial-card reveal">
-        <div class="quote-mark">"</div>
-        <div class="t-stars">★★★★★</div>
-        <div class="t-text">"Boxing classes are insanely addictive. Best stress relief I've ever found. The community here keeps you accountable every single week."</div>
-        <div class="t-author">
-          <div class="t-avatar">DK</div>
-          <div><div class="t-author-name">Dev K.</div><div class="t-author-prog">Boxing · 3 months</div></div>
+      <div class="prog-card" data-aos="fade-up" data-aos-delay="200">
+        <img src="https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=600&q=80" alt="Boxing" loading="lazy" />
+        <div class="prog-card-content">
+          <span class="prog-tag">COMBAT</span>
+          <h3>Boxing</h3>
+          <p>Train like a champion with professional boxing coaches</p>
+          <a href="#programs" class="prog-link">Explore <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cta-band reveal">
-    <div>
-      <h2>7 Days Free.<br>Zero Risk.</h2>
-      <p>Walk in, train hard, decide after. No commitment required.</p>
+  <!-- TESTIMONIALS -->
+  <div class="section testimonials-section">
+    <div class="section-header" data-aos="fade-up">
+      <span class="section-tag">Proof</span>
+      <h2 class="section-title">REAL <span class="text-accent">RESULTS</span></h2>
     </div>
-    <button class="btn-white" onclick="showPage('contact')">Claim Your Free Trial</button>
-  </div>
-
-</div><!-- /home -->
-
-<!-- ====== PROGRAMS ====== -->
-<div id="page-programs" class="page">
-  <div class="section">
-    <div class="section-eyebrow">Our Programs</div>
-    <div class="section-title reveal">Every Goal.<br>One Gym.</div>
-    <div class="section-sub reveal">Six precision-crafted programs built to deliver measurable results — whether you're a first-timer or a seasoned athlete.</div>
-    <div class="programs-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-      <div class="program-card reveal">
-        <div class="prog-num">01</div>
-        <div class="prog-name">Strength Training</div>
-        <div class="prog-desc">Progressive overload training targeting every major muscle group. Barbells, machines, dumbbells — built for hypertrophy and raw power gains.</div>
-        <div class="prog-tags"><span class="tag">3×/week</span><span class="tag">60 min</span><span class="tag hot">All Levels</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
+    <div class="testimonials-slider" data-aos="fade-up" data-aos-delay="100">
+      <div class="testimonials-track" id="testimonials-track">
+        <div class="testimonial-card">
+          <div class="testi-quote"><i class="fas fa-quote-left"></i></div>
+          <p class="testi-text">Lost 32 lbs in 4 months. APEX completely transformed how I think about fitness. The coaches here are world-class.</p>
+          <div class="testi-author">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="James" loading="lazy" />
+            <div>
+              <strong>James Thornton</strong>
+              <span>Lost 32 lbs</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testi-quote"><i class="fas fa-quote-left"></i></div>
+          <p class="testi-text">From couch to competing in my first powerlifting meet in 8 months. The strength program is unmatched anywhere else.</p>
+          <div class="testi-author">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Sarah" loading="lazy" />
+            <div>
+              <strong>Sarah Kimani</strong>
+              <span>Powerlifting Competitor</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testi-quote"><i class="fas fa-quote-left"></i></div>
+          <p class="testi-text">APEX isn't just a gym — it's a lifestyle. The community keeps you accountable and the results speak for themselves.</p>
+          <div class="testi-author">
+            <img src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&q=80" alt="Marcus" loading="lazy" />
+            <div>
+              <strong>Marcus Webb</strong>
+              <span>Gained 18 lbs of muscle</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testi-quote"><i class="fas fa-quote-left"></i></div>
+          <p class="testi-text">Best investment I've ever made. The HIIT classes are brutal but the trainers push you past every limit you thought you had.</p>
+          <div class="testi-author">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" alt="Priya" loading="lazy" />
+            <div>
+              <strong>Priya Sharma</strong>
+              <span>Marathon Finisher</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="program-card reveal">
-        <div class="prog-num">02</div>
-        <div class="prog-name">Cardio Blast</div>
-        <div class="prog-desc">Steady-state and interval cardio for endurance, heart health, and sustained fat loss. Treadmill, rowing, bike, and circuit work.</div>
-        <div class="prog-tags"><span class="tag">4×/week</span><span class="tag">45 min</span><span class="tag">Beginner+</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
+      <div class="testi-controls">
+        <button class="testi-btn" id="testi-prev"><i class="fas fa-chevron-left"></i></button>
+        <div class="testi-dots" id="testi-dots"></div>
+        <button class="testi-btn" id="testi-next"><i class="fas fa-chevron-right"></i></button>
       </div>
-      <div class="program-card reveal">
-        <div class="prog-num">03</div>
-        <div class="prog-name">HIIT Burn</div>
-        <div class="prog-desc">High-intensity intervals that demolish fat and build explosive power. Max output, max results — under an hour.</div>
-        <div class="prog-tags"><span class="tag">3×/week</span><span class="tag">45 min</span><span class="tag hot">Best Seller</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
-      </div>
-      <div class="program-card reveal">
-        <div class="prog-num">04</div>
-        <div class="prog-name">Yoga & Mobility</div>
-        <div class="prog-desc">Flexibility, breath work, and active recovery. Designed to complement intense training and keep your body moving pain-free.</div>
-        <div class="prog-tags"><span class="tag">2×/week</span><span class="tag">60 min</span><span class="tag">All Levels</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
-      </div>
-      <div class="program-card reveal">
-        <div class="prog-num">05</div>
-        <div class="prog-name">Boxing</div>
-        <div class="prog-desc">Technique-driven boxing with bag work, combinations, footwork, and optional sparring. Full-body conditioning with real skill development.</div>
-        <div class="prog-tags"><span class="tag">3×/week</span><span class="tag">60 min</span><span class="tag hot">Beginner+</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
-      </div>
-      <div class="program-card reveal">
-        <div class="prog-num">06</div>
-        <div class="prog-name">CrossFit</div>
-        <div class="prog-desc">Functional movements at high intensity. Daily WODs designed to build all-around athleticism — strength, speed, and stamina.</div>
-        <div class="prog-tags"><span class="tag">5×/week</span><span class="tag">60 min</span><span class="tag">Intermediate+</span></div>
-        <button class="btn-primary" style="font-size:11px;padding:10px 20px;" onclick="showPage('contact')">Join Now</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ====== SCHEDULE ====== -->
-<div id="page-schedule" class="page">
-  <div class="section">
-    <div class="section-eyebrow">Weekly Classes</div>
-    <div class="section-title reveal">Class Schedule</div>
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:0.5rem; flex-wrap:wrap;" class="reveal">
-      <span class="section-sub" style="margin:0;">Book your spot early — classes fill up fast.</span>
-      <span class="live-badge"><span class="live-dot"></span>Live updates</span>
-    </div>
-    <div class="sched-legend reveal">
-      <div class="legend-item"><div class="legend-dot" style="background:#e8301f;"></div>Strength</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ff6b35;"></div>Cardio</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffd700;"></div>HIIT</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#50c882;"></div>Yoga</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#9664ff;"></div>Boxing</div>
-    </div>
-    <div class="sched-wrap reveal">
-      <table class="sched-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Monday</th>
-            <th>Tuesday</th>
-            <th>Wednesday</th>
-            <th>Thursday</th>
-            <th>Friday</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="sched-time">6:00 AM</td>
-            <td><div class="cls-pill strength"><div class="cls-pill-name">Strength</div><div class="cls-pill-trainer">Marcus T.</div></div></td>
-            <td></td>
-            <td><div class="cls-pill cardio"><div class="cls-pill-name">Cardio Blast</div><div class="cls-pill-trainer">Priya S.</div></div></td>
-            <td></td>
-            <td><div class="cls-pill strength"><div class="cls-pill-name">Strength</div><div class="cls-pill-trainer">Marcus T.</div></div></td>
-          </tr>
-          <tr>
-            <td class="sched-time">9:00 AM</td>
-            <td><div class="cls-pill yoga"><div class="cls-pill-name">Yoga Flow</div><div class="cls-pill-trainer">Leila K.</div></div></td>
-            <td><div class="cls-pill hiit"><div class="cls-pill-name">HIIT Burn</div><div class="cls-pill-trainer">Jordan R.</div></div></td>
-            <td><div class="cls-pill yoga"><div class="cls-pill-name">Yoga Flow</div><div class="cls-pill-trainer">Leila K.</div></div></td>
-            <td><div class="cls-pill hiit"><div class="cls-pill-name">HIIT Burn</div><div class="cls-pill-trainer">Jordan R.</div></div></td>
-            <td><div class="cls-pill yoga"><div class="cls-pill-name">Yoga Flow</div><div class="cls-pill-trainer">Leila K.</div></div></td>
-          </tr>
-          <tr>
-            <td class="sched-time">12:00 PM</td>
-            <td><div class="cls-pill hiit"><div class="cls-pill-name">HIIT Burn</div><div class="cls-pill-trainer">Jordan R.</div></div></td>
-            <td><div class="cls-pill boxing"><div class="cls-pill-name">Boxing</div><div class="cls-pill-trainer">Carlos M.</div></div></td>
-            <td><div class="cls-pill strength"><div class="cls-pill-name">Strength</div><div class="cls-pill-trainer">Marcus T.</div></div></td>
-            <td><div class="cls-pill cardio"><div class="cls-pill-name">Cardio Blast</div><div class="cls-pill-trainer">Priya S.</div></div></td>
-            <td><div class="cls-pill boxing"><div class="cls-pill-name">Boxing</div><div class="cls-pill-trainer">Carlos M.</div></div></td>
-          </tr>
-          <tr>
-            <td class="sched-time">6:00 PM</td>
-            <td><div class="cls-pill boxing"><div class="cls-pill-name">Boxing</div><div class="cls-pill-trainer">Carlos M.</div></div></td>
-            <td><div class="cls-pill strength"><div class="cls-pill-name">Strength</div><div class="cls-pill-trainer">Marcus T.</div></div></td>
-            <td><div class="cls-pill hiit"><div class="cls-pill-name">HIIT Burn</div><div class="cls-pill-trainer">Jordan R.</div></div></td>
-            <td><div class="cls-pill boxing"><div class="cls-pill-name">Boxing</div><div class="cls-pill-trainer">Carlos M.</div></div></td>
-            <td><div class="cls-pill hiit"><div class="cls-pill-name">HIIT Burn</div><div class="cls-pill-trainer">Jordan R.</div></div></td>
-          </tr>
-          <tr>
-            <td class="sched-time">8:00 PM</td>
-            <td><div class="cls-pill cardio"><div class="cls-pill-name">Cardio Blast</div><div class="cls-pill-trainer">Priya S.</div></div></td>
-            <td><div class="cls-pill yoga"><div class="cls-pill-name">Evening Yoga</div><div class="cls-pill-trainer">Leila K.</div></div></td>
-            <td><div class="cls-pill cardio"><div class="cls-pill-name">Cardio Blast</div><div class="cls-pill-trainer">Priya S.</div></div></td>
-            <td><div class="cls-pill strength"><div class="cls-pill-name">Strength</div><div class="cls-pill-trainer">Marcus T.</div></div></td>
-            <td></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="text-align:center; margin-top:2rem;" class="reveal">
-      <button class="btn-primary" onclick="showPage('contact')">Book a Class</button>
     </div>
   </div>
-</div>
 
-<!-- ====== TRAINERS ====== -->
-<div id="page-trainers" class="page">
+  <!-- CTA BANNER -->
+  <div class="cta-banner" data-aos="fade-up">
+    <div class="cta-banner-content">
+      <h2>READY TO BEGIN?</h2>
+      <p>Your first week is on us. Zero commitment, maximum results.</p>
+      <a href="#contact" class="btn-primary">Claim Free Trial</a>
+    </div>
+    <div class="cta-banner-bg"></div>
+  </div>
+
+</section>
+
+<!-- ==================== PAGE 2: PROGRAMS ==================== -->
+<section class="page" id="programs">
+  <div class="page-hero" style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">Train Smarter</span>
+      <h1 data-aos="fade-up">OUR <span class="text-accent">PROGRAMS</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">Five elite disciplines. Infinite results.</p>
+    </div>
+  </div>
+
   <div class="section">
-    <div class="section-eyebrow">The Team</div>
-    <div class="section-title reveal">Train With<br>The Best.</div>
-    <div class="section-sub reveal">Certified. Experienced. Obsessively focused on your results.</div>
+    <div class="programs-full-grid">
+
+      <div class="program-full-card" data-aos="fade-up">
+        <div class="pf-image">
+          <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80" alt="Strength Training" loading="lazy" />
+          <span class="pf-badge">POWER</span>
+        </div>
+        <div class="pf-content">
+          <h2>Strength Training</h2>
+          <p>Our strength program is built around the fundamentals — squat, deadlift, bench, and overhead press. Whether you're a beginner or an advanced lifter, our coaches build a periodized program tailored to your goals and current capacity.</p>
+          <ul class="pf-features">
+            <li><i class="fas fa-check"></i> Personalized 1-on-1 coaching</li>
+            <li><i class="fas fa-check"></i> Competition-grade equipment</li>
+            <li><i class="fas fa-check"></i> Progressive overload tracking</li>
+            <li><i class="fas fa-check"></i> Nutrition guidance included</li>
+          </ul>
+          <div class="pf-meta">
+            <span><i class="fas fa-clock"></i> 60 min sessions</span>
+            <span><i class="fas fa-signal"></i> All levels</span>
+            <span><i class="fas fa-users"></i> Max 8 per class</span>
+          </div>
+          <a href="#contact" class="btn-primary">Join Program</a>
+        </div>
+      </div>
+
+      <div class="program-full-card reverse" data-aos="fade-up">
+        <div class="pf-image">
+          <img src="https://images.unsplash.com/photo-1502904550040-7534597429ae?w=800&q=80" alt="Cardio" loading="lazy" />
+          <span class="pf-badge">ENDURANCE</span>
+        </div>
+        <div class="pf-content">
+          <h2>Cardio & Endurance</h2>
+          <p>Push your cardiovascular system to peak performance. From VO2 max training to long-distance endurance protocols, this program improves your heart health, lung capacity, and overall stamina using cutting-edge science.</p>
+          <ul class="pf-features">
+            <li><i class="fas fa-check"></i> Heart rate zone training</li>
+            <li><i class="fas fa-check"></i> Treadmills, rowers & bikes</li>
+            <li><i class="fas fa-check"></i> Outdoor run coaching</li>
+            <li><i class="fas fa-check"></i> Race day preparation</li>
+          </ul>
+          <div class="pf-meta">
+            <span><i class="fas fa-clock"></i> 45–90 min</span>
+            <span><i class="fas fa-signal"></i> All levels</span>
+            <span><i class="fas fa-users"></i> Group & 1-on-1</span>
+          </div>
+          <a href="#contact" class="btn-primary">Join Program</a>
+        </div>
+      </div>
+
+      <div class="program-full-card" data-aos="fade-up">
+        <div class="pf-image">
+          <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80" alt="HIIT" loading="lazy" />
+          <span class="pf-badge accent-badge">POPULAR</span>
+        </div>
+        <div class="pf-content">
+          <h2>HIIT Training</h2>
+          <p>High-Intensity Interval Training is scientifically proven to incinerate fat while preserving muscle. Our HIIT classes are designed in precise work-to-rest ratios that keep your metabolism elevated for 24–48 hours post-workout.</p>
+          <ul class="pf-features">
+            <li><i class="fas fa-check"></i> Scientifically designed intervals</li>
+            <li><i class="fas fa-check"></i> Burn up to 800 cal/session</li>
+            <li><i class="fas fa-check"></i> Full-body conditioning</li>
+            <li><i class="fas fa-check"></i> Daily class availability</li>
+          </ul>
+          <div class="pf-meta">
+            <span><i class="fas fa-clock"></i> 30–45 min</span>
+            <span><i class="fas fa-signal"></i> Intermediate+</span>
+            <span><i class="fas fa-users"></i> Max 12 per class</span>
+          </div>
+          <a href="#contact" class="btn-primary">Join Program</a>
+        </div>
+      </div>
+
+      <div class="program-full-card reverse" data-aos="fade-up">
+        <div class="pf-image">
+          <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80" alt="Yoga" loading="lazy" />
+          <span class="pf-badge">MIND & BODY</span>
+        </div>
+        <div class="pf-content">
+          <h2>Yoga & Mobility</h2>
+          <p>Recovery is training. Our yoga and mobility program complements all physical disciplines — improving flexibility, reducing injury risk, and creating mental clarity. Taught by certified yoga instructors with decades of experience.</p>
+          <ul class="pf-features">
+            <li><i class="fas fa-check"></i> Certified 500-hr yoga teachers</li>
+            <li><i class="fas fa-check"></i> Athlete mobility focus</li>
+            <li><i class="fas fa-check"></i> Meditation & breathwork</li>
+            <li><i class="fas fa-check"></i> Morning & evening classes</li>
+          </ul>
+          <div class="pf-meta">
+            <span><i class="fas fa-clock"></i> 60 min</span>
+            <span><i class="fas fa-signal"></i> All levels</span>
+            <span><i class="fas fa-users"></i> Max 15 per class</span>
+          </div>
+          <a href="#contact" class="btn-primary">Join Program</a>
+        </div>
+      </div>
+
+      <div class="program-full-card" data-aos="fade-up">
+        <div class="pf-image">
+          <img src="https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=800&q=80" alt="Boxing" loading="lazy" />
+          <span class="pf-badge">COMBAT</span>
+        </div>
+        <div class="pf-content">
+          <h2>Boxing & Combat</h2>
+          <p>Learn to fight and get the best workout of your life simultaneously. Our boxing program is coached by former professional fighters who bring real-world experience to every session. Conditioning, technique, and mental toughness all in one.</p>
+          <ul class="pf-features">
+            <li><i class="fas fa-check"></i> Pro-trained coaching staff</li>
+            <li><i class="fas fa-check"></i> Bag work & sparring</li>
+            <li><i class="fas fa-check"></i> Full-body conditioning</li>
+            <li><i class="fas fa-check"></i> Competition prep available</li>
+          </ul>
+          <div class="pf-meta">
+            <span><i class="fas fa-clock"></i> 60–75 min</span>
+            <span><i class="fas fa-signal"></i> Beginner–Pro</span>
+            <span><i class="fas fa-users"></i> Max 10 per class</span>
+          </div>
+          <a href="#contact" class="btn-primary">Join Program</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PAGE 3: CLASS SCHEDULE ==================== -->
+<section class="page" id="schedule">
+  <div class="page-hero" style="background-image: url('https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">Plan Your Week</span>
+      <h1 data-aos="fade-up">CLASS <span class="text-accent">SCHEDULE</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">50+ weekly classes across all disciplines</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="schedule-filter" data-aos="fade-up">
+      <button class="filter-btn active" data-filter="all">All Classes</button>
+      <button class="filter-btn" data-filter="strength">Strength</button>
+      <button class="filter-btn" data-filter="cardio">Cardio</button>
+      <button class="filter-btn" data-filter="hiit">HIIT</button>
+      <button class="filter-btn" data-filter="yoga">Yoga</button>
+      <button class="filter-btn" data-filter="boxing">Boxing</button>
+    </div>
+
+    <div class="schedule-grid-wrap" data-aos="fade-up" data-aos-delay="100">
+      <div class="schedule-grid">
+        <!-- Header row -->
+        <div class="sched-header time-col">TIME</div>
+        <div class="sched-header">MON</div>
+        <div class="sched-header">TUE</div>
+        <div class="sched-header">WED</div>
+        <div class="sched-header">THU</div>
+        <div class="sched-header">FRI</div>
+        <div class="sched-header">SAT</div>
+        <div class="sched-header">SUN</div>
+
+        <!-- 6:00 AM -->
+        <div class="time-slot">6:00 AM</div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Power Lift</span><span class="class-trainer">Coach Ryan</span><span class="class-spots">6 spots</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Deadlift Club</span><span class="class-trainer">Coach Ryan</span><span class="class-spots">4 spots</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Power Lift</span><span class="class-trainer">Coach Maya</span><span class="class-spots">8 spots</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Sunrise Yoga</span><span class="class-trainer">Coach Anita</span><span class="class-spots">10 spots</span></div>
+
+        <!-- 7:30 AM -->
+        <div class="time-slot">7:30 AM</div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">HIIT Blast</span><span class="class-trainer">Coach Dex</span><span class="class-spots">3 spots</span></div>
+        <div class="sched-class cardio" data-type="cardio"><span class="class-name">Endurance Run</span><span class="class-trainer">Coach Zara</span><span class="class-spots">12 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">MetCon</span><span class="class-trainer">Coach Dex</span><span class="class-spots">5 spots</span></div>
+        <div class="sched-class cardio" data-type="cardio"><span class="class-name">Cycle Power</span><span class="class-trainer">Coach Zara</span><span class="class-spots">8 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">HIIT Blast</span><span class="class-trainer">Coach Dex</span><span class="class-spots">2 spots</span></div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Flow Yoga</span><span class="class-trainer">Coach Anita</span><span class="class-spots">15 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">Weekend HIIT</span><span class="class-trainer">Coach Maya</span><span class="class-spots">6 spots</span></div>
+
+        <!-- 9:00 AM -->
+        <div class="time-slot">9:00 AM</div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Mobility Flow</span><span class="class-trainer">Coach Anita</span><span class="class-spots">12 spots</span></div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Boxing Fundamentals</span><span class="class-trainer">Coach Blade</span><span class="class-spots">7 spots</span></div>
+        <div class="sched-class cardio" data-type="cardio"><span class="class-name">Cardio Burn</span><span class="class-trainer">Coach Zara</span><span class="class-spots">9 spots</span></div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Shadow Boxing</span><span class="class-trainer">Coach Blade</span><span class="class-spots">8 spots</span></div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Recovery Yoga</span><span class="class-trainer">Coach Anita</span><span class="class-spots">15 spots</span></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Olympic Lifts</span><span class="class-trainer">Coach Ryan</span><span class="class-spots">6 spots</span></div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Boxing Spar</span><span class="class-trainer">Coach Blade</span><span class="class-spots">5 spots</span></div>
+
+        <!-- 12:00 PM -->
+        <div class="time-slot">12:00 PM</div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">Lunch Crunch</span><span class="class-trainer">Coach Maya</span><span class="class-spots">10 spots</span></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Bench Press Club</span><span class="class-trainer">Coach Ryan</span><span class="class-spots">4 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">Core Destroyer</span><span class="class-trainer">Coach Dex</span><span class="class-spots">8 spots</span></div>
+        <div class="sched-class cardio" data-type="cardio"><span class="class-name">Rowing Circuit</span><span class="class-trainer">Coach Zara</span><span class="class-spots">6 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">Lunch HIIT</span><span class="class-trainer">Coach Dex</span><span class="class-spots">5 spots</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-empty"></div>
+
+        <!-- 5:30 PM -->
+        <div class="time-slot">5:30 PM</div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Boxing Fitness</span><span class="class-trainer">Coach Blade</span><span class="class-spots">Full</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">Evening HIIT</span><span class="class-trainer">Coach Maya</span><span class="class-spots">2 spots</span></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Squat Mastery</span><span class="class-trainer">Coach Ryan</span><span class="class-spots">Full</span></div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Advanced Boxing</span><span class="class-trainer">Coach Blade</span><span class="class-spots">3 spots</span></div>
+        <div class="sched-class hiit" data-type="hiit"><span class="class-name">TGIF HIIT</span><span class="class-trainer">Coach Dex</span><span class="class-spots">Full</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-empty"></div>
+
+        <!-- 7:00 PM -->
+        <div class="time-slot">7:00 PM</div>
+        <div class="sched-class cardio" data-type="cardio"><span class="class-name">Night Run Club</span><span class="class-trainer">Coach Zara</span><span class="class-spots">10 spots</span></div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Evening Restore</span><span class="class-trainer">Coach Anita</span><span class="class-spots">12 spots</span></div>
+        <div class="sched-class boxing" data-type="boxing"><span class="class-name">Boxing Conditioning</span><span class="class-trainer">Coach Blade</span><span class="class-spots">7 spots</span></div>
+        <div class="sched-class strength" data-type="strength"><span class="class-name">Upper Body Focus</span><span class="class-trainer">Coach Maya</span><span class="class-spots">6 spots</span></div>
+        <div class="sched-class yoga" data-type="yoga"><span class="class-name">Wind-Down Yoga</span><span class="class-trainer">Coach Anita</span><span class="class-spots">15 spots</span></div>
+        <div class="sched-empty"></div>
+        <div class="sched-empty"></div>
+      </div>
+    </div>
+
+    <div class="schedule-legend" data-aos="fade-up">
+      <span class="legend-item strength">Strength</span>
+      <span class="legend-item cardio">Cardio</span>
+      <span class="legend-item hiit">HIIT</span>
+      <span class="legend-item yoga">Yoga</span>
+      <span class="legend-item boxing">Boxing</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PAGE 4: TRAINERS ==================== -->
+<section class="page" id="trainers">
+  <div class="page-hero" style="background-image: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">The Best in the Business</span>
+      <h1 data-aos="fade-up">MEET THE <span class="text-accent">COACHES</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">World-class trainers. Relentless dedication.</p>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="trainers-grid">
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#1a0808,#161616);">
-          💪<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=500&q=80" alt="Ryan Cole" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Marcus Thorne</div>
-          <div class="trainer-spec">Strength & Powerlifting</div>
-          <div class="trainer-bio">NSCA-certified. Former national powerlifter. 10 years coaching athletes from beginners to competitive lifters.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Ryan Cole</h3>
+          <span class="trainer-specialty">Head of Strength</span>
+          <p>Former Olympic weightlifter. 12 years coaching elite athletes at the highest level.</p>
+          <div class="trainer-certs">
+            <span>CSCS</span>
+            <span>USAW L2</span>
+            <span>FMS</span>
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#1a0e08,#161616);">
-          🏃<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="100">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=500&q=80" alt="Maya Patel" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Priya Sharma</div>
-          <div class="trainer-spec">Cardio & Endurance</div>
-          <div class="trainer-bio">Marathon runner and triathlete. Specializes in building aerobic base and long-term sustainable fitness habits.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Maya Patel</h3>
+          <span class="trainer-specialty">HIIT & Conditioning</span>
+          <p>NPC Figure competitor. Specializes in body recomposition and peak conditioning protocols.</p>
+          <div class="trainer-certs">
+            <span>ACE CPT</span>
+            <span>NASM</span>
+            <span>Precision Nutrition</span>
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#1a1408,#161616);">
-          🔥<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="200">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=500&q=80" alt="Blade Santos" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Jordan Reyes</div>
-          <div class="trainer-spec">HIIT & CrossFit</div>
-          <div class="trainer-bio">CrossFit Level 3 coach. Designed 500+ WODs. Known for high-energy sessions that destroy your limits.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Blade Santos</h3>
+          <span class="trainer-specialty">Boxing & Combat</span>
+          <p>Former WBO welterweight contender. 15 years as a professional boxer, now coaching champions.</p>
+          <div class="trainer-certs">
+            <span>USA Boxing</span>
+            <span>AIBA</span>
+            <span>S&C Cert</span>
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#081a10,#161616);">
-          🧘<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="300">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=500&q=80" alt="Anita Rao" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Leila Kovacs</div>
-          <div class="trainer-spec">Yoga & Mobility</div>
-          <div class="trainer-bio">RYT 500-certified. Former dancer. Helps athletes recover faster and move without pain through targeted flexibility work.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Anita Rao</h3>
+          <span class="trainer-specialty">Yoga & Mobility</span>
+          <p>500-hr RYT certified. Studied in Mysore, India. Bridges the gap between yoga and athletic performance.</p>
+          <div class="trainer-certs">
+            <span>RYT-500</span>
+            <span>Yin Certified</span>
+            <span>FRC</span>
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#0f0820,#161616);">
-          🥊<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="400">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500&q=80" alt="Dex Williams" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Carlos Mendez</div>
-          <div class="trainer-spec">Boxing & Combat</div>
-          <div class="trainer-bio">Former pro boxer, 18 fights. Turns complete beginners into confident, fit fighters in just months.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Dex Williams</h3>
+          <span class="trainer-specialty">HIIT & Athletic Performance</span>
+          <p>NFL-trained conditioning coach. Known for his brutal HIIT protocols that deliver rapid fat loss.</p>
+          <div class="trainer-certs">
+            <span>NSCA CSCS</span>
+            <span>EXOS</span>
+            <span>PRI Certified</span>
           </div>
         </div>
       </div>
-      <div class="trainer-card reveal">
-        <div class="trainer-avatar" style="background:linear-gradient(135deg,#1a0808,#161616);">
-          🥗<div class="trainer-avatar-accent"></div>
+
+      <div class="trainer-card" data-aos="fade-up" data-aos-delay="500">
+        <div class="trainer-image-wrap">
+          <img src="https://images.unsplash.com/photo-1584466977773-e625c37cdd50?w=500&q=80" alt="Zara Khan" loading="lazy" />
+          <div class="trainer-overlay">
+            <div class="trainer-socials">
+              <a href="#"><i class="fab fa-instagram"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
         </div>
-        <div class="trainer-body">
-          <div class="trainer-name">Aisha Brown</div>
-          <div class="trainer-spec">Sports Nutrition</div>
-          <div class="trainer-bio">Certified sports nutritionist. Crafts meal plans that fuel performance, accelerate recovery, and FitX Arenabody composition.</div>
-          <div class="trainer-socials">
-            <button class="social-chip">IG</button>
-            <button class="social-chip">TW</button>
-            <button class="social-chip">YT</button>
+        <div class="trainer-info">
+          <h3>Zara Khan</h3>
+          <span class="trainer-specialty">Cardio & Endurance</span>
+          <p>Sub-3 hour marathon runner. Specializes in building aerobic base and sustainable endurance habits.</p>
+          <div class="trainer-certs">
+            <span>RRCA Coach</span>
+            <span>USATF L2</span>
+            <span>ACE CPT</span>
           </div>
         </div>
       </div>
+
     </div>
   </div>
-</div>
+</section>
 
-<!-- ====== MEMBERSHIP ====== -->
-<div id="page-membership" class="page">
+<!-- ==================== PAGE 5: MEMBERSHIP ==================== -->
+<section class="page" id="membership">
+  <div class="page-hero" style="background-image: url('https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">Invest in Yourself</span>
+      <h1 data-aos="fade-up">MEMBERSHIP <span class="text-accent">PLANS</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">No contracts. Cancel anytime. Always worth it.</p>
+    </div>
+  </div>
+
   <div class="section">
-    <div class="section-eyebrow">Pricing</div>
-    <div class="section-title reveal">Invest In<br>Your Best Self.</div>
-    <div class="section-sub reveal">Every plan includes full facility access, free orientation, app access, and a 7-day free trial.</div>
-    <div class="plans-grid">
-      <div class="plan-card reveal">
-        <div class="plan-name">Monthly</div>
-        <div class="plan-price"><sup>$</sup>49</div>
-        <div class="plan-period">per month, billed monthly</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li><span class="check">✓</span> Full gym access</li>
-          <li><span class="check">✓</span> 2 group classes/week</li>
-          <li><span class="check">✓</span> Mobile app</li>
-          <li><span class="check">✓</span> Locker room access</li>
-          <li class="no"><span class="check">✗</span> Personal training</li>
-          <li class="no"><span class="check">✗</span> Nutrition coaching</li>
+    <div class="pricing-grid">
+
+      <div class="pricing-card" data-aos="fade-up">
+        <div class="pricing-tier">Monthly</div>
+        <div class="pricing-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">99</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="pricing-desc">Perfect for trying out APEX</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Unlimited gym access</li>
+          <li><i class="fas fa-check"></i> 4 group classes/month</li>
+          <li><i class="fas fa-check"></i> Locker room access</li>
+          <li><i class="fas fa-check"></i> Fitness assessment</li>
+          <li class="disabled"><i class="fas fa-times"></i> Personal training</li>
+          <li class="disabled"><i class="fas fa-times"></i> Nutrition coaching</li>
+          <li class="disabled"><i class="fas fa-times"></i> Guest passes</li>
         </ul>
-        <button class="plan-btn outline" onclick="showPage('contact')">Sign Up Now</button>
+        <a href="#contact" class="btn-outline-plan">Get Started</a>
       </div>
-      <div class="plan-card featured reveal">
-        <div class="plan-popular">Most Popular</div>
-        <div class="plan-name">Quarterly</div>
-        <div class="plan-price" style="color:var(--acc);"><sup>$</sup>39</div>
-        <div class="plan-period">per month · billed every 3 months</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li><span class="check">✓</span> Full gym access</li>
-          <li><span class="check">✓</span> Unlimited group classes</li>
-          <li><span class="check">✓</span> App + progress tracking</li>
-          <li><span class="check">✓</span> Locker room + towel service</li>
-          <li><span class="check">✓</span> 1 PT session/month</li>
-          <li class="no"><span class="check">✗</span> Nutrition coaching</li>
+
+      <div class="pricing-card recommended" data-aos="fade-up" data-aos-delay="100">
+        <div class="recommended-badge">BEST VALUE</div>
+        <div class="pricing-tier">Quarterly</div>
+        <div class="pricing-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">79</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="pricing-desc">3 months — save $60 total</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Unlimited gym access</li>
+          <li><i class="fas fa-check"></i> Unlimited group classes</li>
+          <li><i class="fas fa-check"></i> Locker room + towel service</li>
+          <li><i class="fas fa-check"></i> Monthly fitness assessment</li>
+          <li><i class="fas fa-check"></i> 2 personal training sessions</li>
+          <li><i class="fas fa-check"></i> Nutrition plan included</li>
+          <li class="disabled"><i class="fas fa-times"></i> Guest passes</li>
         </ul>
-        <button class="plan-btn primary" onclick="showPage('contact')">Sign Up Now</button>
+        <a href="#contact" class="btn-primary">Get Started</a>
       </div>
-      <div class="plan-card reveal">
-        <div class="plan-name">Annual</div>
-        <div class="plan-price"><sup>$</sup>29</div>
-        <div class="plan-period">per month · billed annually · save 41%</div>
-        <div class="plan-divider"></div>
-        <ul class="plan-features">
-          <li><span class="check">✓</span> Full gym access</li>
-          <li><span class="check">✓</span> Unlimited group classes</li>
-          <li><span class="check">✓</span> App + advanced analytics</li>
-          <li><span class="check">✓</span> Locker room + towel + guest pass</li>
-          <li><span class="check">✓</span> 4 PT sessions/month</li>
-          <li><span class="check">✓</span> Full nutrition coaching</li>
+
+      <div class="pricing-card" data-aos="fade-up" data-aos-delay="200">
+        <div class="pricing-tier">Annual</div>
+        <div class="pricing-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">59</span>
+          <span class="price-period">/month</span>
+        </div>
+        <div class="pricing-desc">12 months — save $480 total</div>
+        <ul class="pricing-features">
+          <li><i class="fas fa-check"></i> Unlimited gym access</li>
+          <li><i class="fas fa-check"></i> Unlimited group classes</li>
+          <li><i class="fas fa-check"></i> Premium locker + towel service</li>
+          <li><i class="fas fa-check"></i> Weekly fitness assessments</li>
+          <li><i class="fas fa-check"></i> 4 personal training sessions</li>
+          <li><i class="fas fa-check"></i> Full nutrition coaching</li>
+          <li><i class="fas fa-check"></i> 4 guest passes/month</li>
         </ul>
-        <button class="plan-btn outline" onclick="showPage('contact')">Sign Up Now</button>
+        <a href="#contact" class="btn-outline-plan">Get Started</a>
+      </div>
+
+    </div>
+
+    <div class="member-perks" data-aos="fade-up">
+      <h3>ALL MEMBERS GET</h3>
+      <div class="perks-grid">
+        <div class="perk-item"><i class="fas fa-shield-alt"></i><span>No long-term contract</span></div>
+        <div class="perk-item"><i class="fas fa-mobile-alt"></i><span>APEX mobile app</span></div>
+        <div class="perk-item"><i class="fas fa-parking"></i><span>Free parking</span></div>
+        <div class="perk-item"><i class="fas fa-wifi"></i><span>High-speed WiFi</span></div>
+        <div class="perk-item"><i class="fas fa-utensils"></i><span>Nutrition bar access</span></div>
+        <div class="perk-item"><i class="fas fa-headset"></i><span>24/7 support</span></div>
       </div>
     </div>
-    <p style="text-align:center; margin-top:1.5rem; font-size:12px; color:var(--text3); font-family:var(--font-mono); letter-spacing:1px;">
-      All plans include a 7-day free trial. Cancel anytime. No hidden fees.
-    </p>
   </div>
-</div>
+</section>
 
-<!-- ====== TRANSFORMS ====== -->
-<div id="page-transforms" class="page">
+<!-- ==================== PAGE 6: TRANSFORMATIONS ==================== -->
+<section class="page" id="transformations">
+  <div class="page-hero" style="background-image: url('https://images.unsplash.com/photo-1550345332-09e3ac987658?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">Real People. Real Results.</span>
+      <h1 data-aos="fade-up">APEX <span class="text-accent">TRANSFORMATIONS</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">The proof is in the progress.</p>
+    </div>
+  </div>
+
   <div class="section">
-    <div class="section-eyebrow">Real Results</div>
-    <div class="section-title reveal">Proof It<br>Works.</div>
-    <div class="section-sub reveal">No filters. No gimmicks. Real members, real results — earned through hard work and the right program.</div>
-    <div class="transforms-grid">
-      <div class="transform-card reveal">
-        <div class="transform-visual">
-          <div class="t-side t-before">🧍<div class="t-label">Before</div></div>
-          <div class="t-divider"></div>
-          <div class="t-side t-after">🏋️<div class="t-label">After</div></div>
-        </div>
-        <div class="transform-body">
-          <div class="transform-name">James M., 34</div>
-          <div class="transform-result">↓ 28 lbs lost · 4 months</div>
-          <div class="transform-prog">HIIT Program</div>
-          <div class="transform-quote">"I never believed I could do it until I actually did it."</div>
-        </div>
-      </div>
-      <div class="transform-card reveal">
-        <div class="transform-visual">
-          <div class="t-side t-before">🧍<div class="t-label">Before</div></div>
-          <div class="t-divider"></div>
-          <div class="t-side t-after">🏋️<div class="t-label">After</div></div>
-        </div>
-        <div class="transform-body">
-          <div class="transform-name">Sara R., 28</div>
-          <div class="transform-result">↑ +40 lbs on bench · 6 months</div>
-          <div class="transform-prog">Strength Training</div>
-          <div class="transform-quote">"Stronger than I have ever been in my entire life."</div>
-        </div>
-      </div>
-      <div class="transform-card reveal">
-        <div class="transform-visual">
-          <div class="t-side t-before">🧍<div class="t-label">Before</div></div>
-          <div class="t-divider"></div>
-          <div class="t-side t-after">🏋️<div class="t-label">After</div></div>
-        </div>
-        <div class="transform-body">
-          <div class="transform-name">Dev K., 41</div>
-          <div class="transform-result">↓ 35 lbs lost · 5 months</div>
-          <div class="transform-prog">Boxing + Cardio</div>
-          <div class="transform-quote">"Boxing gave me a confidence I didn't know I had."</div>
-        </div>
-      </div>
-      <div class="transform-card reveal">
-        <div class="transform-visual">
-          <div class="t-side t-before">🧍<div class="t-label">Before</div></div>
-          <div class="t-divider"></div>
-          <div class="t-side t-after">🏋️<div class="t-label">After</div></div>
-        </div>
-        <div class="transform-body">
-          <div class="transform-name">Nina W., 26</div>
-          <div class="transform-result">↓ 22 lbs lost · 3 months</div>
-          <div class="transform-prog">HIIT + Yoga</div>
-          <div class="transform-quote">"Best decision I've made for my mental and physical health."</div>
-        </div>
-      </div>
-    </div>
-    <div style="text-align:center; margin-top:3rem;" class="reveal">
-      <button class="btn-primary" style="font-size:13px;padding:16px 40px;" onclick="showPage('contact')">Start Your Transformation</button>
-    </div>
-  </div>
-</div>
+    <div class="transformations-grid">
 
-<!-- ====== CONTACT ====== -->
-<div id="page-contact" class="page">
-  <div class="section">
-    <div class="section-eyebrow">Get Started</div>
-    <div class="section-title reveal">Claim Your<br>Free Trial.</div>
-    <div class="section-sub reveal">Fill out the form and we'll get you set up with a 7-day free trial and a personal orientation session — on us.</div>
-    <div class="contact-grid" style="margin-top:3rem;">
-      <div class="contact-form reveal">
-        <div class="form-title">Free Trial Signup</div>
-        <div class="form-group">
-          <label class="form-label">Full Name</label>
-          <input class="form-input" id="f-name" type="text" placeholder="Your full name">
+      <div class="transform-card" data-aos="fade-up">
+        <div class="before-after">
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=80" alt="Before" loading="lazy" />
+            <span class="ba-label">BEFORE</span>
+          </div>
+          <div class="ba-divider"><i class="fas fa-arrow-right"></i></div>
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80" alt="After" loading="lazy" />
+            <span class="ba-label after">AFTER</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input class="form-input" id="f-email" type="email" placeholder="you@email.com">
+        <div class="transform-story">
+          <h3>Marcus, 34</h3>
+          <div class="transform-stats">
+            <div class="ts"><span>−42 lbs</span><small>Lost</small></div>
+            <div class="ts"><span>6 months</span><small>Duration</small></div>
+            <div class="ts"><span>HIIT + Strength</span><small>Program</small></div>
+          </div>
+          <p>"I'd tried everything before APEX. The combination of structured HIIT and strength training finally cracked the code for me."</p>
         </div>
-        <div class="form-group">
-          <label class="form-label">Phone Number</label>
-          <input class="form-input" id="f-phone" type="tel" placeholder="+91 98765 43210">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Your Primary Goal</label>
-          <select class="form-select" id="f-goal">
-            <option value="">Select a goal</option>
-            <option>Lose weight & burn fat</option>
-            <option>Build muscle & strength</option>
-            <option>Improve endurance & stamina</option>
-            <option>General fitness & health</option>
-            <option>Stress relief & flexibility</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Preferred Program</label>
-          <select class="form-select" id="f-prog">
-            <option value="">Choose a program (optional)</option>
-            <option>Strength Training</option>
-            <option>HIIT Burn</option>
-            <option>Cardio Blast</option>
-            <option>Boxing</option>
-            <option>Yoga & Mobility</option>
-            <option>CrossFit</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Message (optional)</label>
-          <textarea class="form-textarea" id="f-msg" placeholder="Any specific questions or goals?"></textarea>
-        </div>
-        <button class="form-submit" onclick="submitForm()">Claim My Free Trial →</button>
-        <div class="form-success" id="form-success">✓ You're in! We'll reach out within 24 hours to schedule your first session.</div>
       </div>
-      <div class="contact-sidebar reveal">
-        <div class="info-card">
-          <div class="info-card-title">Visit Us</div>
-          <div class="info-row">
-            <div class="info-icon">📍</div>
-            <div class="info-val">42 Iron Street, Indiranagar<br>Bengaluru, Karnataka 560038</div>
+
+      <div class="transform-card" data-aos="fade-up" data-aos-delay="100">
+        <div class="before-after">
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1524863479829-916d8e77f114?w=400&q=80" alt="Before" loading="lazy" />
+            <span class="ba-label">BEFORE</span>
           </div>
-          <div class="map-mock">
-            <div class="map-mock-icon">🗺️</div>
-            <div class="map-mock-text">Indiranagar, Bengaluru</div>
+          <div class="ba-divider"><i class="fas fa-arrow-right"></i></div>
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80" alt="After" loading="lazy" />
+            <span class="ba-label after">AFTER</span>
           </div>
         </div>
-        <div class="info-card">
-          <div class="info-card-title">Contact</div>
-          <div class="info-row"><div class="info-icon">📞</div><div class="info-val">+91 80 4567 8900</div></div>
-          <div class="info-row"><div class="info-icon">✉️</div><div class="info-val">hello@forgegym.in</div></div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-title">Hours</div>
-          <div class="info-row"><div class="info-icon">⏰</div><div class="info-val">Mon–Fri: 5:00 AM – 11:00 PM<br>Sat–Sun: 6:00 AM – 10:00 PM</div></div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-title">Follow Us</div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-            <button class="social-chip" style="padding:8px 16px;">Instagram</button>
-            <button class="social-chip" style="padding:8px 16px;">YouTube</button>
-            <button class="social-chip" style="padding:8px 16px;">Facebook</button>
-            <button class="social-chip" style="padding:8px 16px;">Twitter</button>
+        <div class="transform-story">
+          <h3>Jessica, 28</h3>
+          <div class="transform-stats">
+            <div class="ts"><span>+18 lbs</span><small>Muscle Gained</small></div>
+            <div class="ts"><span>8 months</span><small>Duration</small></div>
+            <div class="ts"><span>Strength</span><small>Program</small></div>
           </div>
+          <p>"Coach Ryan's strength program completely changed my body composition. I'm stronger than I've ever been."</p>
+        </div>
+      </div>
+
+      <div class="transform-card" data-aos="fade-up" data-aos-delay="200">
+        <div class="before-after">
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=400&q=80" alt="Before" loading="lazy" />
+            <span class="ba-label">BEFORE</span>
+          </div>
+          <div class="ba-divider"><i class="fas fa-arrow-right"></i></div>
+          <div class="ba-side">
+            <img src="https://images.unsplash.com/photo-1549576490-b0b4831ef60a?w=400&q=80" alt="After" loading="lazy" />
+            <span class="ba-label after">AFTER</span>
+          </div>
+        </div>
+        <div class="transform-story">
+          <h3>David, 41</h3>
+          <div class="transform-stats">
+            <div class="ts"><span>−55 lbs</span><small>Lost</small></div>
+            <div class="ts"><span>10 months</span><small>Duration</small></div>
+            <div class="ts"><span>Boxing + Cardio</span><small>Program</small></div>
+          </div>
+          <p>"Boxing was the missing piece. Blade's coaching gave me a discipline and drive I'd never had in any gym before."</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Success metrics -->
+    <div class="success-metrics" data-aos="fade-up">
+      <h2 class="section-title">THE NUMBERS <span class="text-accent">DON'T LIE</span></h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-num">847</span>
+          <span class="metric-label">Members who hit their goals in 2024</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-num">12,400 lbs</span>
+          <span class="metric-label">Total weight lost by our community</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-num">98%</span>
+          <span class="metric-label">Member satisfaction rate</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-num">4.2x</span>
+          <span class="metric-label">Faster results vs solo training</span>
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>
 
-<footer>
-  <div class="footer-logo">FORGE<span>.</span></div>
-  <div class="footer-text">© 2026 Forge Gym · No excuses. Only results. · Bengaluru, India</div>
+<!-- ==================== PAGE 7: CONTACT ==================== -->
+<section class="page" id="contact">
+  <div class="page-hero contact-hero" style="background-image: url('https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=1920&q=80')">
+    <div class="page-hero-overlay"></div>
+    <div class="page-hero-content">
+      <span class="section-tag" data-aos="fade-down">Start Today</span>
+      <h1 data-aos="fade-up">GET IN <span class="text-accent">TOUCH</span></h1>
+      <p data-aos="fade-up" data-aos-delay="100">Your first week free. No credit card required.</p>
+    </div>
+  </div>
+
+  <div class="section contact-section">
+    <div class="contact-grid">
+
+      <!-- Free Trial Form -->
+      <div class="contact-form-wrap" data-aos="fade-right">
+        <h2>Claim Your <span class="text-accent">Free Trial</span></h2>
+        <p class="form-sub">Fill in the form below and we'll set you up with a 7-day free trial — no commitment, no credit card.</p>
+        <form class="contact-form" id="trial-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name</label>
+              <input type="text" placeholder="John" required />
+            </div>
+            <div class="form-group">
+              <label>Last Name</label>
+              <input type="text" placeholder="Doe" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="john@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" placeholder="+1 (555) 000-0000" />
+          </div>
+          <div class="form-group">
+            <label>Program Interest</label>
+            <select>
+              <option value="">Select a program</option>
+              <option>Strength Training</option>
+              <option>Cardio & Endurance</option>
+              <option>HIIT Training</option>
+              <option>Yoga & Mobility</option>
+              <option>Boxing & Combat</option>
+              <option>Not sure yet</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Your Goal</label>
+            <textarea placeholder="Tell us about your fitness goals..." rows="4"></textarea>
+          </div>
+          <button type="submit" class="btn-primary full-width">
+            Claim My Free Trial <i class="fas fa-arrow-right"></i>
+          </button>
+          <div class="form-success" id="form-success">
+            <i class="fas fa-check-circle"></i> You're in! We'll contact you within 24 hours.
+          </div>
+        </form>
+      </div>
+
+      <!-- Contact Info + Map -->
+      <div class="contact-info-wrap" data-aos="fade-left">
+        <div class="contact-details">
+          <div class="contact-info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <strong>Location</strong>
+              <span>350 West 42nd Street<br />New York, NY 10036</span>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <i class="fas fa-phone"></i>
+            <div>
+              <strong>Phone</strong>
+              <span>+1 (212) 555-APEX</span>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <i class="fas fa-envelope"></i>
+            <div>
+              <strong>Email</strong>
+              <span>hello@apexgym.com</span>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <i class="fas fa-clock"></i>
+            <div>
+              <strong>Hours</strong>
+              <span>Mon–Fri: 5AM – 11PM<br />Sat–Sun: 6AM – 10PM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-wrap">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.9476519598985!2d-74.00368068459356!3d40.75869757932713!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9f775f259%3A0x999668d0d7c3fd7d!2s350%20W%2042nd%20St%2C%20New%20York%2C%20NY%2010036!5e0!3m2!1sen!2sus!4v1620000000000!5m2!1sen!2sus"
+            width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade" title="APEX Gym Location">
+          </iframe>
+        </div>
+
+        <!-- Social -->
+        <div class="contact-social">
+          <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+          <a href="#" class="social-link"><i class="fab fa-tiktok"></i></a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <span class="logo-apex">APEX</span><span class="logo-dot">.</span>
+      <p>Where champions are made. Elite performance training in the heart of New York City.</p>
+      <div class="footer-socials">
+        <a href="#"><i class="fab fa-instagram"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-youtube"></i></a>
+        <a href="#"><i class="fab fa-tiktok"></i></a>
+      </div>
+    </div>
+    <div class="footer-links-group">
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#programs">Programs</a></li>
+        <li><a href="#schedule">Schedule</a></li>
+        <li><a href="#trainers">Trainers</a></li>
+      </ul>
+    </div>
+    <div class="footer-links-group">
+      <h4>Join</h4>
+      <ul>
+        <li><a href="#membership">Membership</a></li>
+        <li><a href="#transformations">Results</a></li>
+        <li><a href="#contact">Free Trial</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-links-group">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Cookie Policy</a></li>
+        <li><a href="#">Refund Policy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 APEX Elite Performance Center. All rights reserved.</span>
+    <span>Built for champions.</span>
+  </div>
 </footer>
 
-<script>
-// Custom cursor
-const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx = -100, my = -100, rx = -100, ry = -100;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-function animateCursor() {
-  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animateCursor);
-}
-animateCursor();
-
-// Page navigation
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const p = document.getElementById('page-' + id);
-  if (p) p.classList.add('active');
-  const map = { home:0, programs:1, schedule:2, trainers:3, membership:4, transforms:5, contact:6 };
-  const links = document.querySelectorAll('#nav-links .nav-link');
-  if (map[id] !== undefined && links[map[id]]) links[map[id]].classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  setTimeout(initReveal, 100);
-}
-
-// Mobile menu
-let menuOpen = false;
-function toggleMenu() {
-  menuOpen = !menuOpen;
-  document.getElementById('mobile-menu').style.display = menuOpen ? 'block' : 'none';
-  document.getElementById('hamburger').textContent = menuOpen ? '✕' : '☰';
-}
-
-// Counter animation
-function animateCounter(el, target, duration) {
-  let start = 0, step = target / (duration / 16);
-  function tick() {
-    start = Math.min(start + step, target);
-    el.textContent = Math.round(start);
-    if (start < target) requestAnimationFrame(tick);
-  }
-  tick();
-}
-function runCounters() {
-  const targets = [[1,12],[2,98],[3,48],[4,15],[5,6]];
-  targets.forEach(([i, t]) => {
-    const el = document.getElementById('c'+i);
-    if (el && el.textContent === '0') animateCounter(el, t, 1500);
-  });
-}
-
-// Scroll reveal
-function initReveal() {
-  const els = document.querySelectorAll('.page.active .reveal');
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) {
-        setTimeout(() => e.target.classList.add('visible'), i * 60);
-        obs.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.08 });
-  els.forEach(el => obs.observe(el));
-  if (document.getElementById('page-home').classList.contains('active')) runCounters();
-}
-
-// Form validation
-function submitForm() {
-  const name = document.getElementById('f-name').value.trim();
-  const email = document.getElementById('f-email').value.trim();
-  const goal = document.getElementById('f-goal').value;
-  if (!name) { alert('Please enter your name.'); return; }
-  if (!email || !email.includes('@') || !email.includes('.')) { alert('Please enter a valid email address.'); return; }
-  if (!goal) { alert('Please select your primary goal.'); return; }
-  document.getElementById('form-success').style.display = 'block';
-  const btn = document.querySelector('.form-submit');
-  btn.disabled = true; btn.style.opacity = '0.5';
-  btn.textContent = '✓ Submitted!';
-}
-
-// Init
-setTimeout(initReveal, 200);
-
-// Nav scroll effect
-window.addEventListener('scroll', () => {
-  const nav = document.getElementById('main-nav');
-  nav.style.background = window.scrollY > 40 ? 'rgba(8,8,8,0.98)' : 'rgba(8,8,8,0.85)';
-});
-</script>
+<!-- AOS JS -->
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
